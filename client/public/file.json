@@ -1,0 +1,38 @@
+[
+  {
+    "_id": "67b4d05c4c093e124f3377c0",
+    "name": "gulnaaz",
+    "email": "gulnaaz@gmail.com",
+    "password": "$2b$10$G5.8jRhEr8KemKhIqvL.zuGQiGa2WHHheqFTGdEQwGPhWhCz9ycgW",
+    "avatar": "https://res.cloudinary.com/uploadassestsfromjobportal/image/upload/v17...",
+    "createdAt": "2025-02-18T18:24:28.164Z",
+    "updatedAt": "2025-02-18T18:24:28.164Z"
+  },
+  {
+    "_id": "67b4d05c4c093e124f3377c1",
+    "name": "Aisha",
+    "email": "aisha@gmail.com",
+    "password": "$2b$10$XyzRandomHashedPassword123456",
+    "avatar": "https://i.pravatar.cc/100?img=1",
+    "createdAt": "2025-02-19T10:00:00.000Z",
+    "updatedAt": "2025-02-19T10:00:00.000Z"
+  },
+  {
+    "_id": "67b4d05c4c093e124f3377c2",
+    "name": "Rahul",
+    "email": "rahul@gmail.com",
+    "password": "$2b$10$XyzRandomHashedPassword987654",
+    "avatar": "https://i.pravatar.cc/100?img=2",
+    "createdAt": "2025-02-19T10:05:00.000Z",
+    "updatedAt": "2025-02-19T10:05:00.000Z"
+  },
+  {
+    "_id": "67b4d05c4c093e124f3377c3",
+    "name": "Fatima",
+    "email": "fatima@gmail.com",
+    "password": "$2b$10$XyzRandomHashedPassword543210",
+    "avatar": "https://i.pravatar.cc/100?img=3",
+    "createdAt": "2025-02-19T10:10:00.000Z",
+    "updatedAt": "2025-02-19T10:10:00.000Z"
+  }
+]
