@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import conversation from "../models/conversation.js";
 import message from "../models/message.model.js";
+import { getIoInstance } from "../../../socket/index.js";
 const sendMessage = asyncHandler(async (req, res) => {
   const { message: messageText } = req.body;
   const { id: receiverId } = req.params;
@@ -17,7 +18,7 @@ const sendMessage = asyncHandler(async (req, res) => {
   if (!conversations) {
     conversations = await conversation.create({
       participants: [senderId, receiverId],
-      conversationMessage: [], 
+      conversationMessage: [],
     });
   }
 
@@ -37,6 +38,14 @@ const sendMessage = asyncHandler(async (req, res) => {
   // Push new message ID to conversationMessage array
   conversations.conversationMessage.push(newMessage._id);
   await conversations.save(); // Save the updated conversation
+
+  // Emit the message in real-time using Socket.io
+  const io = getIoInstance(); // Get socket instance
+  io.to(receiverId).emit("receiveMessage", {
+    senderId,
+    receiverId,
+    message: messageText,
+  });
 
   return res
     .status(201)
