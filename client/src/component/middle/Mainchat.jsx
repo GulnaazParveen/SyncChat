@@ -29,7 +29,7 @@ const Mainchat = ({
         {/* Messages Display */}
         <div className="h-64 overflow-y-auto p-4 bg-white/20 rounded-lg mb-4 space-y-2">
           {messages.map((msg, index) => {
-            const isMe = msg.sender === currentUser?._id; // ✅ Fix sender comparison
+             const isMe = msg.sender === currentUser?._id; 
             return (
               <div
                 key={index}
@@ -43,7 +43,7 @@ const Mainchat = ({
                   }`}
                 >
                   <strong>{isMe ? "Me" : selectedFriend?.name}: </strong>
-                  {msg.message} {/* ✅ Fix text property */}
+                  {msg.message} 
                 </div>
               </div>
             );

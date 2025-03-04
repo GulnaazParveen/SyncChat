@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import Login from "./Login";
 import Register from "./Register";
 import Chatroom from "./Chatroom";
-
+import axiosInstance from "../utility/axiosInstance";
 const Auth = ({ setUser }) => {
   const [isChatRoom, setChatRoom] = useState(false);
   const [isLogin, setIsLogin] = useState(false);
@@ -35,8 +34,8 @@ const Auth = ({ setUser }) => {
    formData.append("avatar", register.avatar); 
 
    try {
-     const response = await axios.post(
-       "http://localhost:8000/api/v1/users/registerUser",
+     const response = await axiosInstance.post(
+       "/users/registerUser",
        formData,
        {
          headers: {
@@ -56,8 +55,8 @@ const Auth = ({ setUser }) => {
   // Login User
   const userLogin = async () => {
     try {
-      const res = await axios.post(
-        "http://localhost:8000/api/v1/users/login",
+      const res = await axiosInstance.post(
+        "/users/login",
         login,
         {
           headers: {
@@ -68,7 +67,6 @@ const Auth = ({ setUser }) => {
       );
 
       setUser(res.data.user);
-      // store data into local storage
       const token = res.data.data.accessToken;
       const user = res.data.data.user;
       // console.log("token",token);
