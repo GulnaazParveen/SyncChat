@@ -1,1 +1,1 @@
-![demo](newDemo.png)
+![demo](client/newDemo.png)
