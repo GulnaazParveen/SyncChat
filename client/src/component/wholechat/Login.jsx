@@ -1,8 +1,33 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axiosInstance from "../utility/axiosInstance";
 
-const Login = ({ setLogin, setIsLogin, login, userLogin }) => {
+const Login = ({ setUser }) => {
+  const [login, setLogin] = useState({ email: "", password: "" });
+  const navigate = useNavigate();
+
+  const userLogin = async () => {
+    try {
+      const res = await axiosInstance.post("/users/login", login, {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: true,
+      });
+
+      const { accessToken, user, refreshToken } = res.data.data;
+
+      localStorage.setItem("token", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      setUser(user);
+      navigate("/chatroom");
+    } catch (error) {
+      alert("Invalid email or password.");
+    }
+  };
+
   return (
-    <div className="w-1/2 text-center">
+    <div className="bg-white/10 backdrop-blur-lg p-6 rounded-xl shadow-lg w-[30rem] flex flex-col items-center justify-center text-center">
       <h2 className="text-2xl font-bold text-white mb-4">
         Welcome to ChatConnect
       </h2>
@@ -28,7 +53,7 @@ const Login = ({ setLogin, setIsLogin, login, userLogin }) => {
       </button>
       <p
         className="text-white mt-2 cursor-pointer"
-        onClick={() => setIsLogin(false)}
+        onClick={() => navigate("/auth/register")}
       >
         Don't have an account? Register
       </p>

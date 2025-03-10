@@ -1,6 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axiosInstance from "../utility/axiosInstance";
 
-const Register = ({ setIsLogin, setRegister, register, userRegister }) => {
+const Register = ({ setUser }) => {
+  const [register, setRegister] = useState({
+    name: "",
+    email: "",
+    password: "",
+    avatar: null,
+  });
+
+  const navigate = useNavigate();
+
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -8,8 +19,34 @@ const Register = ({ setIsLogin, setRegister, register, userRegister }) => {
     }
   };
 
+  const userRegister = async () => {
+    const formData = new FormData();
+    formData.append("name", register.name);
+    formData.append("email", register.email);
+    formData.append("password", register.password);
+    formData.append("avatar", register.avatar);
+
+    try {
+      const res = await axiosInstance.post("/users/registerUser", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        withCredentials: true,
+      });
+
+      setUser(res.data.data.user);
+      alert("Registration successful! Please login.");
+      navigate("/auth/login");
+    } catch (error) {
+      if (error.response?.data?.message === "Email already exists") {
+        alert("Email already registered! Redirecting to login...");
+        navigate("/auth/login");
+      } else {
+        alert("Registration failed. Please try again.");
+      }
+    }
+  };
+
   return (
-    <div className="w-1/2 text-center">
+    <div className="bg-white/10 backdrop-blur-lg p-6 rounded-xl shadow-lg w-[30rem] flex flex-col items-center justify-center text-center">
       <h2 className="text-2xl font-bold text-white mb-4">
         Register for ChatConnect
       </h2>
@@ -34,7 +71,6 @@ const Register = ({ setIsLogin, setRegister, register, userRegister }) => {
         value={register.password}
         onChange={(e) => setRegister({ ...register, password: e.target.value })}
       />
-      {/* Avatar Upload */}
       <input
         type="file"
         accept="image/*"
@@ -49,7 +85,7 @@ const Register = ({ setIsLogin, setRegister, register, userRegister }) => {
       </button>
       <p
         className="text-white mt-2 cursor-pointer"
-        onClick={() => setIsLogin(true)}
+        onClick={() => navigate("/auth/login")}
       >
         Already have an account? Login
       </p>

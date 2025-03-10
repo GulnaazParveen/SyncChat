@@ -4,7 +4,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-const generateAccessAndRefereshTokens = async (userId) => {
+// ✅ Fixed function name
+const generateAccessAndRefreshTokens = async (userId) => {
   try {
     const user = await User.findById(userId);
     const accessToken = user.generateAccessToken();
@@ -15,12 +16,10 @@ const generateAccessAndRefereshTokens = async (userId) => {
 
     return { accessToken, refreshToken };
   } catch (error) {
-    throw new ApiError(
-      500,
-      "Something went wrong while generating referesh and access token"
-    );
+    throw new ApiError(500, "Error generating tokens");
   }
 };
+
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -117,67 +116,61 @@ const loginUser = asyncHandler(async (req, res) => {
       )
     );
 });
-const logoutUser = asyncHandler(async (req, res) => {
+ const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
-    {
-      $unset: {
-        refreshToken: 1,
-      },
-    },
-    -{
-      new: true,
-    }
+    { $unset: { refreshToken: 1 } },
+    { new: true }
   );
-
-  const options = {
-    httpOnly: true,
-    secure: true,
-  };
 
   return res
     .status(200)
-    .clearCookie("accessToken", options)
-    .clearCookie("refreshToken", options)
-    .json(new ApiResponse(200, {}, "User logged Out"));
+    .clearCookie("accessToken")
+    .clearCookie("refreshToken")
+    .json(new ApiResponse(200, {}, "User logged out"));
 });
 
-const refreshAccessToken = asyncHandler(async (req, res) => {
-  const incomingRefreshToken =
-    req.cookies.refreshToken || req.body.refreshToken;
+const refreshAccessToken = asyncHandler(async (req, res, next) => {
+  const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
 
-  if (!incomingRefreshToken) {
-    throw new ApiError(400, "Unauthorized request");
+  if (!refreshToken) {
+    return next(new ApiError(400, "Unauthorized request"));
   }
 
   try {
-    const decodedToken = jwt.verify(
-      incomingRefreshToken,
-      process.env.REFRESH_TOKEN_SECRET
-    );
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const user = await User.findById(decoded._id);
 
-    const user = await User.findById(decodedToken._id);
-    if (!user || incomingRefreshToken !== user.refreshToken) {
-      throw new ApiError(401, "Invalid refresh token, please log in again.");
+    if (!user || refreshToken !== user.refreshToken) {
+      return next(
+        new ApiError(401, "Invalid refresh token, please log in again.")
+      );
     }
 
-    const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
-      user._id
-    );
+    const { accessToken, refreshToken: newRefreshToken } =
+      await generateAccessAndRefreshTokens(user._id);
 
     res
       .status(200)
-      .cookie("accessToken", accessToken, { httpOnly: true })
-      .cookie("refreshToken", refreshToken, { httpOnly: true })
+      .cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "Strict",
+      })
+      .cookie("refreshToken", newRefreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "Strict",
+      })
       .json(
         new ApiResponse(
           200,
-          { accessToken, refreshToken },
+          { accessToken, refreshToken: newRefreshToken },
           "Access token refreshed"
         )
       );
   } catch (error) {
-    throw new ApiError(401, "Refresh token expired, please log in again.");
+    return next(new ApiError(401, "Invalid refresh token."));
   }
 });
 
@@ -190,4 +183,14 @@ const getAllLoggedUser = asyncHandler(async (req, res) => {
   return res.status(201).json(new ApiResponse(200, allUserData, ""));
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken,getAllLoggedUser };
+// get userlogged data
+const individualLoggedUser=asyncHandler(async(req,res)=>{
+  const individualUser=await User.findById(req.user._id).select("-password");
+  if(!individualUser){
+    throw new ApiError(401,"user is not register");
+  }
+    return res.status(201).json(new ApiResponse(200, individualUser, ""));
+})
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken,getAllLoggedUser,individualLoggedUser };
+

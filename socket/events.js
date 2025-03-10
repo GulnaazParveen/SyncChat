@@ -1,37 +1,45 @@
-const onlineUsers = {}; // Store online users
+import { getIoInstance } from "../socket/index.js";
+const onlineUsers = new Map();
 
-export const handleSocketEvents = (socket, io) => {
-  console.log(
-    "🔹 User connected:",
-    socket.userId,
-    "(Socket ID:",
-    socket.id,
-    ")"
-  );
+export const handleSocketEvents = (socket) => {
+  console.log(`✅ Handling events for: ${socket.id}`);
 
-  //  Listen for "userConnected" event from frontend
+  // **User Connection Event**
   socket.on("userConnected", (userId) => {
-    onlineUsers[userId] = socket.id;
-    io.emit("updateOnlineUsers", Object.keys(onlineUsers));
+    onlineUsers.set(userId, socket.id);
+    console.log(`✅ User ${userId} is online (Socket ID: ${socket.id})`);
+    updateOnlineUsers();
   });
 
-  // Listen for "sendMessage" event
-  socket.on("sendMessage", ({ receiverId, message }) => {
-    console.log(` Message from ${socket.userId} to ${receiverId}:`, message);
+  // **Message Handling**
+  socket.on("sendMessage", ({ senderId, receiverId, message }) => {
+    const receiverSocketId = onlineUsers.get(receiverId);
 
-    const receiverSocketId = onlineUsers[receiverId];
     if (receiverSocketId) {
-      io.to(receiverSocketId).emit("receiveMessage", {
-        senderId: socket.userId,
+      getIoInstance().to(receiverSocketId).emit("receiveMessage", {
+        senderId,
         message,
       });
+      console.log(`📩 Message sent from ${senderId} to ${receiverId}`);
+    } else {
+      console.log(`⚠️ Receiver ${receiverId} is offline.`);
     }
   });
 
-  // Handle user disconnect
+  // **User Disconnection**
   socket.on("disconnect", () => {
-    console.log(" User disconnected:", socket.userId);
-    delete onlineUsers[socket.userId];
-    io.emit("updateOnlineUsers", Object.keys(onlineUsers));
+    for (let [userId, socketId] of onlineUsers.entries()) {
+      if (socketId === socket.id) {
+        onlineUsers.delete(userId);
+        break;
+      }
+    }
+    console.log(`🔴 User disconnected: ${socket.id}`);
+    updateOnlineUsers();
   });
+
+  // **Update Online Users List**
+  const updateOnlineUsers = () => {
+    getIoInstance().emit("updateOnlineUsers", Array.from(onlineUsers.keys()));
+  };
 };

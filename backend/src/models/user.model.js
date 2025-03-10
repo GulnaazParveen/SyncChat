@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-
+import { v4 as uuidv4 } from "uuid";
 const userSchema = mongoose.Schema({
   name: {
     type: String,
@@ -46,6 +46,8 @@ userSchema.methods.generateAccessToken = function () {
       email: this.email,
       name: this.name,
       avatar: this.avatar,
+       iat: new Date().getTime(),
+      jti: uuidv4() 
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
