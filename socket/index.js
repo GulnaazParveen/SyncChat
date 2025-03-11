@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-console.log("🔍 JWT_SECRET is:", process.env.JWT_SECRET); // Add this line
+console.log("🔍 JWT_SECRET is:", process.env.ACCESS_TOKEN_SECRET); // Add this line
 
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
@@ -20,44 +20,48 @@ export const createSocketServer = (server) => {
   });
 
   // **Middleware for Authentication**
-  io.use((socket, next) => {
-    console.log("🔍 Authenticating Socket Connection...");
+ io.use((socket, next) => {
+   console.log("🔍 Authenticating Socket Connection...");
 
-    const token = socket.handshake.auth?.token;
-    if (!token) {
-      console.log("❌ No token found in handshake.auth!");
-      return next(new Error("Unauthorized"));
-    }
+   const token = socket.handshake.auth?.token;
+   if (!token) {
+     console.log("❌ No token found in handshake.auth!");
+     return next(new Error("Unauthorized"));
+   }
 
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log(`✅ Token verified for user: ${decoded.id}`);
-      socket.user = decoded; // Attach user data to socket
-      next();
-    } catch (err) {
-      console.log("🔴 Token verification failed:", err.message);
+   try {
+     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-      if (err.name === "TokenExpiredError") {
-        console.log("🔄 Token expired, prompting client to refresh...");
-        socket.emit("tokenExpired"); // Notify client
-      }
+    //  console.log("✅ Decoded Token:", decoded); // Debugging
+     if (!decoded._id) {
+       throw new Error("Invalid token payload, missing _id");
+     }
 
-      return next(new Error("Unauthorized"));
-    }
-  });
+     socket.user = decoded; // Attach user data to socket
+    //  console.log("🔍 Stored in socket.user:", socket.user); // 🛑 Debugging step
+     next();
+   } catch (err) {
+     console.log("🔴 Token verification failed:", err.message);
+
+     if (err.name === "TokenExpiredError") {
+       console.log("🔄 Token expired, prompting client to refresh...");
+       socket.emit("tokenExpired");
+     }
+
+     return next(new Error("Unauthorized"));
+   }
+ });
+
 
   // **Socket Connection Handler**
   io.on("connection", (socket) => {
-    console.log(
-      `🟢 User connected: ${socket.user.id} (Socket ID: ${socket.id})`
-    );
+    // console.log(
+    //   `🟢 User connected: ${socket.user._id} (Socket ID: ${socket.id})`
+    // );
 
-    handleSocketEvents(socket, io); // Pass socket & io to events.js
-
-    socket.on("disconnect", () => {
-      console.log(`🔴 User disconnected: ${socket.user.id}`);
-    });
+    handleSocketEvents(socket, io); // All event handling inside event.js
   });
+
 };
 
 // **Function to Get Global io Instance**

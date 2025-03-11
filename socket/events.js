@@ -2,12 +2,12 @@ import { getIoInstance } from "../socket/index.js";
 const onlineUsers = new Map();
 
 export const handleSocketEvents = (socket) => {
-  console.log(`✅ Handling events for: ${socket.id}`);
+  // console.log(`✅ Handling events for: ${socket.id}`);
 
   // **User Connection Event**
   socket.on("userConnected", (userId) => {
     onlineUsers.set(userId, socket.id);
-    console.log(`✅ User ${userId} is online (Socket ID: ${socket.id})`);
+    // console.log(`✅ User ${userId} is online (Socket ID: ${socket.id})`);
     updateOnlineUsers();
   });
 
@@ -27,16 +27,24 @@ export const handleSocketEvents = (socket) => {
   });
 
   // **User Disconnection**
-  socket.on("disconnect", () => {
-    for (let [userId, socketId] of onlineUsers.entries()) {
-      if (socketId === socket.id) {
-        onlineUsers.delete(userId);
-        break;
-      }
-    }
-    console.log(`🔴 User disconnected: ${socket.id}`);
-    updateOnlineUsers();
-  });
+ socket.on("disconnect", () => {
+   let disconnectedUserId = null;
+
+   for (let [userId, socketId] of onlineUsers.entries()) {
+     if (socketId === socket.id) {
+       disconnectedUserId = userId; // Store userId before deleting
+       onlineUsers.delete(userId);
+       break;
+     }
+   }
+
+   console.log(
+     `🔴 User disconnected: ${disconnectedUserId || "Unknown"} (Socket ID: ${
+       socket.id
+     })`
+   );
+   updateOnlineUsers();
+ });
 
   // **Update Online Users List**
   const updateOnlineUsers = () => {

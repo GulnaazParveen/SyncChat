@@ -45,52 +45,56 @@ const Register = ({ setUser }) => {
     }
   };
 
-  return (
-    <div className="bg-white/10 backdrop-blur-lg p-6 rounded-xl shadow-lg w-[30rem] flex flex-col items-center justify-center text-center">
-      <h2 className="text-2xl font-bold text-white mb-4">
-        Register for ChatConnect
-      </h2>
-      <input
-        type="text"
-        className="w-full p-2 rounded-lg bg-gray-800 text-white border border-gray-600 mb-4"
-        placeholder="Enter your name..."
-        value={register.name}
-        onChange={(e) => setRegister({ ...register, name: e.target.value })}
-      />
-      <input
-        type="email"
-        className="w-full p-2 rounded-lg bg-gray-800 text-white border border-gray-600 mb-4"
-        placeholder="Enter your email..."
-        value={register.email}
-        onChange={(e) => setRegister({ ...register, email: e.target.value })}
-      />
-      <input
-        type="password"
-        className="w-full p-2 rounded-lg bg-gray-800 text-white border border-gray-600 mb-4"
-        placeholder="Enter your password..."
-        value={register.password}
-        onChange={(e) => setRegister({ ...register, password: e.target.value })}
-      />
-      <input
-        type="file"
-        accept="image/*"
-        className="w-full p-2 rounded-lg bg-gray-800 text-white border border-gray-600 mb-4"
-        onChange={handleAvatarChange}
-      />
-      <button
-        onClick={userRegister}
-        className="bg-green-500 px-4 py-2 rounded-lg text-white shadow-md w-full"
-      >
-        Register
-      </button>
-      <p
-        className="text-white mt-2 cursor-pointer"
-        onClick={() => navigate("/auth/login")}
-      >
-        Already have an account? Login
-      </p>
-    </div>
-  );
+   return (
+     <div className="flex items-center justify-center min-h-screen bg-gray-900">
+       <div className="bg-white/10 backdrop-blur-lg p-6 rounded-xl shadow-lg w-[30rem] flex flex-col items-center justify-center text-center">
+         <h2 className="text-2xl font-bold text-white mb-4">
+           Register for ChatConnect
+         </h2>
+         <input
+           type="text"
+           className="w-full p-2 rounded-lg bg-gray-800 text-white border border-gray-600 mb-4"
+           placeholder="Enter your name..."
+           value={register.name}
+           onChange={(e) => setRegister({ ...register, name: e.target.value })}
+         />
+         <input
+           type="email"
+           className="w-full p-2 rounded-lg bg-gray-800 text-white border border-gray-600 mb-4"
+           placeholder="Enter your email..."
+           value={register.email}
+           onChange={(e) => setRegister({ ...register, email: e.target.value })}
+         />
+         <input
+           type="password"
+           className="w-full p-2 rounded-lg bg-gray-800 text-white border border-gray-600 mb-4"
+           placeholder="Enter your password..."
+           value={register.password}
+           onChange={(e) =>
+             setRegister({ ...register, password: e.target.value })
+           }
+         />
+         <input
+           type="file"
+           accept="image/*"
+           className="w-full p-2 rounded-lg bg-gray-800 text-white border border-gray-600 mb-4"
+           onChange={handleAvatarChange}
+         />
+         <button
+           onClick={userRegister}
+           className="bg-green-500 px-4 py-2 rounded-lg text-white shadow-md w-full"
+         >
+           Register
+         </button>
+         <p
+           className="text-white mt-2 cursor-pointer"
+           onClick={() => navigate("/auth/login")}
+         >
+           Already have an account? Login
+         </p>
+       </div>
+     </div>
+   );
 };
 
 export default Register;

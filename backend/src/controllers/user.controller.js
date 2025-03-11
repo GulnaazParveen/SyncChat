@@ -86,7 +86,7 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid user credentials");
   }
 
-  const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
     user._id
   );
 
@@ -131,6 +131,11 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const refreshAccessToken = asyncHandler(async (req, res, next) => {
+  console.log("Cookies: ", req.cookies);
+  console.log("Body: ", req.body);
+  console.log("RefreshToken in body: ", req.body.refreshToken);
+  console.log("RefreshToken in cookies: ", req.cookies.refreshToken);
+
   const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
 
   if (!refreshToken) {
@@ -189,7 +194,15 @@ const individualLoggedUser=asyncHandler(async(req,res)=>{
   if(!individualUser){
     throw new ApiError(401,"user is not register");
   }
-    return res.status(201).json(new ApiResponse(200, individualUser, ""));
+   return res
+     .status(200)
+     .json(
+       new ApiResponse(
+         200,
+         { user: individualUser },
+         "User fetched successfully"
+       )
+     );
 })
 
 export { registerUser, loginUser, logoutUser, refreshAccessToken,getAllLoggedUser,individualLoggedUser };

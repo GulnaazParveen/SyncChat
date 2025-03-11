@@ -4,6 +4,7 @@ import {
   Route,
   Routes,
   Navigate,
+  useLocation,
 } from "react-router-dom";
 import axiosInstance, {
   handleTokenRefresh,
@@ -23,59 +24,92 @@ const App = () => {
       let token = localStorage.getItem("token");
       let storedUser = localStorage.getItem("user");
 
-      if (token && storedUser) {
-        setUser(JSON.parse(storedUser));
-        await connectSocket();
-      } else {
+      console.log("🔍 Checking token:", token); // 👀 Debug
+
+      if (token) {
+        console.log("🔄 Fetching user data...");
         await fetchUserData(token);
+      } else {
+        console.log("❌ No token found, showing login page.");
+        setLoading(false); // If no token, stop loading and show login
       }
-      setLoading(false);
     };
 
     initializeUser();
   }, []);
 
+
   const fetchUserData = async (token) => {
-    if (!token) return;
+    console.log("🚀 fetchUserData called with token:", token); // 👀 Debug
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const res = await axiosInstance.get("/users/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUser(res.data.data.user);
+      console.log("✅ API Response:", res.data);
+
+      console.log("✅ User fetched:", res.data.data.user);
+
+      setUser(res.data.data.user); // ✅ User state update karo
       localStorage.setItem("user", JSON.stringify(res.data.data.user));
-      await connectSocket(); // Ensure socket connects after fetching user
+
+      await connectSocket(); // ✅ Socket tabhi connect ho jab user logged in ho
     } catch (error) {
-      console.log("Token expired. Refreshing token...");
-      await handleTokenRefresh();
+      console.log("🔴 Token invalid. Trying refresh...");
+
+      const newToken = await handleTokenRefresh();
+      if (newToken) {
+        localStorage.setItem("token", newToken);
+        return fetchUserData(newToken); // ✅ New token ke saath dobara fetchUserData call karo
+      } else {
+        console.log("🔴 Refresh token failed. Logging out...");
+        handleLogout();
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+
+  if (loading)
+    return (
+      <div className="text-center mt-20 text-xl text-white">Loading...</div>
+    );
 
   return (
     <Router>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            user ? (
-              <Navigate to="/chatroom" />
-            ) : (
-              <Navigate to="/auth/register" />
-            )
-          }
-        />
-        <Route path="/auth/register" element={<Register setUser={setUser} />} />
-        <Route path="/auth/login" element={<Login setUser={setUser} />} />
-        <Route
-          path="/chatroom"
-          element={
-            user ? <Chatroom user={user} /> : <Navigate to="/auth/login" />
-          }
-        />
-      </Routes>
+      <AppRoutes user={user} setUser={setUser} />
     </Router>
+  );
+};
+
+const AppRoutes = ({ user, setUser }) => {
+  const location = useLocation();
+
+  // Prevent infinite looping
+  if (!user && !["/auth/login", "/auth/register"].includes(location.pathname)) {
+    return <Navigate to="/auth/login" replace />;
+  }
+
+  return (
+    <Routes>
+      <Route path="/auth/register" element={<Register setUser={setUser} />} />
+      <Route path="/auth/login" element={<Login setUser={setUser} />} />
+      <Route
+        path="/chatroom"
+        element={
+          user ? <Chatroom user={user} /> : <Navigate to="/auth/login" />
+        }
+      />
+      <Route
+        path="/"
+        element={<Navigate to={user ? "/chatroom" : "/auth/login"} replace />}
+      />
+    </Routes>
   );
 };
 

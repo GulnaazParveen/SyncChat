@@ -2,8 +2,6 @@ import dotenv from "dotenv";
 dotenv.config({
   path: ".env",
 });
-console.log("🔍 JWT_SECRET is:", process.env.JWT_SECRET); // Add this line
-
 import { app } from "./app.js";
 import { dbconnect } from "./src/db/dbConnection.js";
 import { createSocketServer } from "../socket/index.js";

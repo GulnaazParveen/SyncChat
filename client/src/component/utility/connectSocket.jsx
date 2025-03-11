@@ -1,13 +1,13 @@
 import { io } from "socket.io-client";
-
+import { handleTokenRefresh ,handleLogout} from "./axiosInstance";
 export const connectSocket = async () => {
   let token = localStorage.getItem("token");
 
   if (!token) {
     console.log("🔴 No token found, attempting refresh...");
-    await refreshAccessToken(); // Ensure token is refreshed
-    token = localStorage.getItem("token"); // Retrieve new token
-    if (!token) return null; // If still no token, return
+    await handleTokenRefresh();
+    token = localStorage.getItem("token");
+    if (!token) return null;
   }
 
   let socket = io("http://localhost:8000", {
@@ -19,13 +19,13 @@ export const connectSocket = async () => {
 
   socket.on("tokenExpired", async () => {
     console.log("🔄 Token expired! Refreshing...");
-    await refreshAccessToken();
-    const newToken = localStorage.getItem("token");
+    const newToken = await handleTokenRefresh();
 
     if (newToken) {
       console.log("✅ New token received, reconnecting socket...");
       socket.disconnect();
       socket = io("http://localhost:8000", {
+        transports: ["websocket"],
         auth: { token: newToken },
       });
     } else {
@@ -36,3 +36,4 @@ export const connectSocket = async () => {
 
   return socket;
 };
+

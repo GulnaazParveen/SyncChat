@@ -21,14 +21,17 @@ const Chatroom = ({ user }) => {
      socketRef.current = await connectSocket();
      if (!socketRef.current) return;
 
+     console.log("🟢 Emitting userConnected event for:", user._id);
      socketRef.current.emit("userConnected", user._id);
-     socketRef.current.on("updateOnlineUsers", (users) =>
-       setOnlineUsers(users)
-     );
 
-     socketRef.current.on("disconnect", () =>
-       console.log("🔴 Socket disconnected.")
-     );
+     socketRef.current.on("updateOnlineUsers", (users) => {
+       console.log("🟢 Online users updated:", users);
+       setOnlineUsers(users);
+     });
+
+     socketRef.current.on("disconnect", () => {
+       console.log("🔴 Socket disconnected.");
+     });
    };
 
    initializeSocket();
@@ -43,23 +46,25 @@ const Chatroom = ({ user }) => {
       const response = await axiosInstance.get("/users/getusers", {
         withCredentials: true,
       });
+      console.log("get users is ", response.data.data);
+      console.log("get users", response.data.data.user);
+      
+      if (response.data?.data?.length > 0) {
+        const loggedInUser = JSON.parse(localStorage.getItem("user"));
+        const filteredFriends = response.data.data.filter(
+          (user) => user._id !== loggedInUser._id
+        );
 
-      const loggedInUser = JSON.parse(localStorage.getItem("user"));
-      const filteredFriends = response.data.data.filter(
-        (user) => user._id !== loggedInUser._id
-      );
-
-      setFriends(filteredFriends);
+        setFriends(filteredFriends);
+      } else {
+        console.log("⚠️ No users found.");
+        setFriends([]); // Ensure it's an empty array
+      }
     } catch (error) {
       console.error("Error fetching users:", error);
+      setFriends([]);
     }
   };
-
-  useEffect(() => {
-    if (selectedFriend) {
-      getMessages();
-    }
-  }, [selectedFriend]);
 
   const getMessages = async () => {
     try {
@@ -85,6 +90,17 @@ const Chatroom = ({ user }) => {
     }
   };
 
+  useEffect(() => {
+    if (user) {
+      getUsers();
+    }
+  }, [user]);
+
+useEffect(() => {
+  if (selectedFriend) {
+    getMessages();
+  }
+}, [selectedFriend]);
   useEffect(() => {
     if (!socketRef.current) return;
 
