@@ -1,13 +1,11 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-console.log("🔍 JWT_SECRET is:", process.env.ACCESS_TOKEN_SECRET); // Add this line
-
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
-import { handleSocketEvents } from "./events.js"; // Import event handlers
+import { handleSocketEvents } from "./events.js";
 
-let io; // Global Socket.io instance
+let io;
 
 export const createSocketServer = (server) => {
   io = new Server(server, {
@@ -16,55 +14,49 @@ export const createSocketServer = (server) => {
       methods: ["GET", "POST"],
       credentials: true,
     },
-    transports: ["websocket", "polling"], // Enable WebSocket
+    transports: ["websocket", "polling"],
   });
 
   // **Middleware for Authentication**
- io.use((socket, next) => {
-   console.log("🔍 Authenticating Socket Connection...");
+  io.use((socket, next) => {
+    console.log("🔍 Authenticating Socket Connection...");
 
-   const token = socket.handshake.auth?.token;
-   if (!token) {
-     console.log("❌ No token found in handshake.auth!");
-     return next(new Error("Unauthorized"));
-   }
+    const token = socket.handshake.auth?.token;
+    console.log("🔍 Token received in handshake:", token);
 
-   try {
-     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    if (!token) {
+      console.log("❌ No token found in handshake.auth!");
+      return next(new Error("Unauthorized"));
+    }
 
-    //  console.log("✅ Decoded Token:", decoded); // Debugging
-     if (!decoded._id) {
-       throw new Error("Invalid token payload, missing _id");
-     }
+    try {
+      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-     socket.user = decoded; // Attach user data to socket
-    //  console.log("🔍 Stored in socket.user:", socket.user); // 🛑 Debugging step
-     next();
-   } catch (err) {
-     console.log("🔴 Token verification failed:", err.message);
+      if (!decoded._id) {
+        throw new Error("Invalid token payload, missing _id");
+      }
 
-     if (err.name === "TokenExpiredError") {
-       console.log("🔄 Token expired, prompting client to refresh...");
-       socket.emit("tokenExpired");
-     }
+      socket.user = decoded; // Attach user data to socket
+      next();
+    } catch (err) {
+      console.log("🔴 Token verification failed:", err.message);
 
-     return next(new Error("Unauthorized"));
-   }
- });
+      if (err.name === "TokenExpiredError") {
+        console.log("🔄 Token expired, prompting client to refresh...");
+        socket.emit("tokenExpired");
+      }
 
+      return next(new Error("Unauthorized"));
+    }
+  });
 
   // **Socket Connection Handler**
   io.on("connection", (socket) => {
-    // console.log(
-    //   `🟢 User connected: ${socket.user._id} (Socket ID: ${socket.id})`
-    // );
-
-    handleSocketEvents(socket, io); // All event handling inside event.js
+    console.log("✅ Socket connected:", socket.user);
+    handleSocketEvents(socket, io);
   });
-
 };
 
-// **Function to Get Global io Instance**
 export const getIoInstance = () => {
   if (!io) {
     throw new Error("Socket.io is not initialized!");

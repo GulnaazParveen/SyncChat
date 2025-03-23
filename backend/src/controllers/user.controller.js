@@ -4,7 +4,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-// ✅ Fixed function name
+
+// Function to generate access and refresh tokens
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
     const user = await User.findById(userId);
@@ -20,6 +21,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
   }
 };
 
+// Register user
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -67,11 +69,11 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, "User registered Successfully"));
 });
 
-// login user
+// Login user
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   if (!email) {
-    throw new ApiError(400, " email is required");
+    throw new ApiError(400, "Email is required");
   }
 
   const user = await User.findOne({ email });
@@ -96,8 +98,8 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: false,
-    sameSite: "Lax",
+    secure: true,
+    sameSite: "Strict",
   };
 
   return res
@@ -112,11 +114,13 @@ const loginUser = asyncHandler(async (req, res) => {
           accessToken,
           refreshToken,
         },
-        "User logged In Successfully"
+        "User logged in successfully"
       )
     );
 });
- const logoutUser = asyncHandler(async (req, res) => {
+
+// Logout user
+const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
     { $unset: { refreshToken: 1 } },
@@ -130,6 +134,7 @@ const loginUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged out"));
 });
 
+// Refresh access token
 const refreshAccessToken = asyncHandler(async (req, res, next) => {
   console.log("Cookies: ", req.cookies);
   console.log("Body: ", req.body);
@@ -165,7 +170,7 @@ const refreshAccessToken = asyncHandler(async (req, res, next) => {
       .cookie("refreshToken", newRefreshToken, {
         httpOnly: true,
         secure: true,
-        sameSite: "Strict",
+        sameSite: "Lax",
       })
       .json(
         new ApiResponse(
@@ -179,31 +184,37 @@ const refreshAccessToken = asyncHandler(async (req, res, next) => {
   }
 });
 
-//get all logged data
+// Get all logged data
 const getAllLoggedUser = asyncHandler(async (req, res) => {
   const allUserData = await User.find();
   if (!allUserData) {
-    throw new ApiError(404, "something weng wrong");
+    throw new ApiError(404, "Something went wrong");
   }
   return res.status(201).json(new ApiResponse(200, allUserData, ""));
 });
 
-// get userlogged data
-const individualLoggedUser=asyncHandler(async(req,res)=>{
-  const individualUser=await User.findById(req.user._id).select("-password");
-  if(!individualUser){
-    throw new ApiError(401,"user is not register");
+// Get user logged data
+const individualLoggedUser = asyncHandler(async (req, res) => {
+  const individualUser = await User.findById(req.user._id).select("-password");
+  if (!individualUser) {
+    throw new ApiError(401, "User is not registered");
   }
-   return res
-     .status(200)
-     .json(
-       new ApiResponse(
-         200,
-         { user: individualUser },
-         "User fetched successfully"
-       )
-     );
-})
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { user: individualUser },
+        "User fetched successfully"
+      )
+    );
+});
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken,getAllLoggedUser,individualLoggedUser };
-
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  getAllLoggedUser,
+  individualLoggedUser,
+};

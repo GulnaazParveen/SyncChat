@@ -13,10 +13,9 @@ const Login = ({ setUser }) => {
         withCredentials: true,
       });
 
-      const { accessToken, user, refreshToken } = res.data.data;
+      const { accessToken, user} = res.data.data;
 
       localStorage.setItem("token", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
       localStorage.setItem("user", JSON.stringify(user));
 
       setUser(user);

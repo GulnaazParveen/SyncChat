@@ -1,6 +1,7 @@
 import React from 'react'
 
-const Rightside = ({ friends }) => {
+const Rightside = ({ friends, onlineUsers}) => {
+  
   return (
     <>
       <aside className="w-full md:w-1/4 bg-white/20 p-5 rounded-xl shadow-md backdrop-blur-lg">
@@ -11,7 +12,6 @@ const Rightside = ({ friends }) => {
           className="w-full rounded-lg shadow-md mb-4"
         />
 
-        {/* Quick Reactions */}
         <div>
           <h3 className="text-white font-bold mb-2">Quick Reactions</h3>
           <div className="flex space-x-2">
@@ -35,14 +35,14 @@ const Rightside = ({ friends }) => {
           <h3 className="text-white font-bold mb-2">Online Users</h3>
           <ul className="space-y-2">
             {friends
-              .filter((friend) => friend.status === "Online")
+              .filter((friend) => onlineUsers.includes(friend._id))
               .map((friend, index) => (
                 <li
                   key={index}
                   className="flex items-center bg-white/30 p-2 rounded-lg shadow-md"
                 >
                   <img
-                    src={friend.img}
+                    src={friend.avatar}
                     alt={friend.name}
                     className="w-8 h-8 rounded-full mr-3"
                   />

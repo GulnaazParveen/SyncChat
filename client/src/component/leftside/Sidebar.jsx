@@ -6,40 +6,38 @@ const Sidebar = ({
   setSelectedFriend,
   onlineUsers,
 }) => {
+  console.log("online", onlineUsers);
   return (
-    <aside className="w-full md:w-1/4 bg-white/20 p-5 rounded-xl shadow-md backdrop-blur-lg">
-      <h2 className="text-lg font-bold mb-4 text-white">Friends</h2>
-      <ul className="space-y-3">
-        {friends.map((friend, index) => {
-          const isOnline = onlineUsers.includes(friend._id); 
-          return (
-            <li
-              key={index}
-              className={`flex items-center p-3 rounded-lg cursor-pointer transition ${
-                selectedFriend?._id === friend._id
-                  ? "bg-blue-500"
-                  : "bg-white/30 hover:bg-white/50"
-              }`}
-              onClick={() => setSelectedFriend(friend)}
-            >
+    <div className="w-full md:w-1/4 bg-white/40 p-6 rounded-xl shadow-md backdrop-blur-lg">
+      <h2 className="text-xl font-semibold text-gray-800">Friends</h2>
+      <ul className="mt-4">
+        {friends.map((friend) => (
+          <li
+            key={friend._id}
+            className={`p-2 rounded-lg cursor-pointer ${
+              selectedFriend?._id === friend._id ? "bg-gray-300" : ""
+            }`}
+            onClick={() => setSelectedFriend(friend)}
+          >
+            <div className="flex items-center">
               <img
                 src={friend.avatar}
                 alt={friend.name}
-                className="rounded-full w-10 h-10 mr-3"
+                className="w-10 h-10 rounded-full mr-2"
               />
-              <span className="font-medium text-white">{friend.name}</span>
-
-              {/* Online Status Indicator */}
-              <span
-                className={`ml-auto w-3 h-3 rounded-full ${
-                  isOnline ? "bg-green-500" : "bg-gray-500"
-                }`}
-              />
-            </li>
-          );
-        })}
+              <div>
+                <p className="text-gray-800">{friend.name}</p>
+                {onlineUsers.includes(friend._id) ? (
+                  <span className="text-green-500">●</span>
+                ) : (
+                  <span className="text-gray-500">●</span>
+                )}
+              </div>
+            </div>
+          </li>
+        ))}
       </ul>
-    </aside>
+    </div>
   );
 };
 

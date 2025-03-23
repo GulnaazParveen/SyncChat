@@ -15,6 +15,8 @@ const Mainchat = ({
     if (storedUser && storedUser._id) {
       setCurrentUser(storedUser);
     }
+    const user = JSON.parse(localStorage.getItem("user"));
+    setCurrentUser(user);
   }, []);
 
   return (

@@ -1,5 +1,5 @@
 import { io } from "socket.io-client";
-import { handleTokenRefresh ,handleLogout} from "./axiosInstance";
+import { handleTokenRefresh, handleLogout } from "./axiosInstance";
 export const connectSocket = async () => {
   let token = localStorage.getItem("token");
 
@@ -36,4 +36,3 @@ export const connectSocket = async () => {
 
   return socket;
 };
-

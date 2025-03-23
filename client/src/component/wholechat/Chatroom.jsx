@@ -3,7 +3,7 @@ import Mainchat from "../middle/Mainchat";
 import Sidebar from "../leftside/Sidebar";
 import Rightside from "../rightside/Rightside";
 import axiosInstance from "../utility/axiosInstance";
-import { connectSocket } from "../utility/connectSocket";
+import { connectSocket, disconnectSocket } from "../utility/connectSocket";
 
 const Chatroom = ({ user }) => {
   const [friends, setFriends] = useState([]);
@@ -11,62 +11,57 @@ const Chatroom = ({ user }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const socketRef = useRef(null);
 
-  const socketRef = useRef(null); // ✅ Define socketRef before using it
+  useEffect(() => {
+    if (!user) return;
 
- useEffect(() => {
-   if (!user) return;
+    const initializeSocket = async () => {
+      console.log("🔍 Initializing socket with token:", user.token);
+      socketRef.current = await connectSocket(user.token); // Pass the token
+      if (!socketRef.current) return;
 
-   const initializeSocket = async () => {
-     socketRef.current = await connectSocket();
-     if (!socketRef.current) return;
+      socketRef.current.emit("userConnected", user._id);
+      socketRef.current.on("updateOnlineUsers", (users) => {
+        console.log("🟢 Online users updated:", users);
+        setOnlineUsers(users);
+      });
+      socketRef.current.on("disconnect", () =>
+        console.log("❌ Socket disconnected.")
+      );
+      socketRef.current.on("reconnect", () => {
+        console.log("✅ Socket reconnected.");
+        socketRef.current.emit("userConnected", user._id); // Re-emit userConnected event on reconnect
+      });
+      socketRef.current.on("receiveMessage", (data) => {
+        console.log("📩 Message received:", data);
+        setMessages((prev) => [
+          ...prev,
+          { sender: data.senderId, message: data.message },
+        ]);
+      });
+    };
 
-     console.log("🟢 Emitting userConnected event for:", user._id);
-     socketRef.current.emit("userConnected", user._id);
-
-     socketRef.current.on("updateOnlineUsers", (users) => {
-       console.log("🟢 Online users updated:", users);
-       setOnlineUsers(users);
-     });
-
-     socketRef.current.on("disconnect", () => {
-       console.log("🔴 Socket disconnected.");
-     });
-   };
-
-   initializeSocket();
-
-   return () => {
-     socketRef.current?.disconnect();
-   };
- }, [user]);
+    initializeSocket();
+    return () => disconnectSocket();
+  }, [user]);
 
   const getUsers = async () => {
     try {
       const response = await axiosInstance.get("/users/getusers", {
         withCredentials: true,
       });
-      console.log("get users is ", response.data.data);
-      console.log("get users", response.data.data.user);
-      
-      if (response.data?.data?.length > 0) {
-        const loggedInUser = JSON.parse(localStorage.getItem("user"));
-        const filteredFriends = response.data.data.filter(
-          (user) => user._id !== loggedInUser._id
-        );
-
-        setFriends(filteredFriends);
-      } else {
-        console.log("⚠️ No users found.");
-        setFriends([]); // Ensure it's an empty array
-      }
+      const loggedInUser = JSON.parse(localStorage.getItem("user"));
+      setFriends(
+        response.data.data.filter((user) => user._id !== loggedInUser._id)
+      );
     } catch (error) {
       console.error("Error fetching users:", error);
-      setFriends([]);
     }
   };
 
   const getMessages = async () => {
+    if (!selectedFriend) return;
     try {
       const token = localStorage.getItem("token");
       const res = await axiosInstance.get(
@@ -76,79 +71,43 @@ const Chatroom = ({ user }) => {
           withCredentials: true,
         }
       );
-
-      const fetchedMessages = res.data?.data || [];
-      const formattedMessages = fetchedMessages.map((msg) => ({
-        sender: msg.sender?._id || msg.sender,
-        message: msg.message,
-      }));
-
-      setMessages(formattedMessages);
+      setMessages(
+        res.data?.data.map((msg) => ({
+          sender: msg.sender?._id || msg.sender,
+          message: msg.message,
+        }))
+      );
     } catch (error) {
       console.error("Error fetching messages:", error);
-      setMessages([]);
     }
   };
 
   useEffect(() => {
-    if (user) {
-      getUsers();
-    }
+    if (user) getUsers();
   }, [user]);
-
-useEffect(() => {
-  if (selectedFriend) {
-    getMessages();
-  }
-}, [selectedFriend]);
   useEffect(() => {
-    if (!socketRef.current) return;
-
-    socketRef.current.on("receiveMessage", (data) => {
-      if (selectedFriend && data.senderId === selectedFriend._id) {
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { sender: data.senderId, message: data.message },
-        ]);
-      }
-    });
-
-    socketRef.current.on("tokenExpired", async () => {
-      console.log("🔄 Token expired. Refreshing...");
-      await handleTokenRefresh();
-      const newSocket = await connectSocket(); // Ensure proper reconnection
-      socketRef.current = newSocket; // Assign only after successful connection
-    });
-
-    return () => {
-      socketRef.current?.off("receiveMessage");
-      socketRef.current?.off("tokenExpired");
-    };
+    console.log("Selected friend changed:", selectedFriend);
+    if (selectedFriend) getMessages();
   }, [selectedFriend]);
 
   const sendMessage = async () => {
     if (!selectedFriend || input.trim() === "") return;
-
+    const loggedInUser = JSON.parse(localStorage.getItem("user"));
+    setMessages((prev) => [
+      ...prev,
+      { sender: loggedInUser._id, message: input },
+    ]);
+    socketRef.current.emit("sendMessage", {
+      senderId: loggedInUser._id,
+      receiverId: selectedFriend._id,
+      message: input,
+    });
     try {
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { sender: "You", message: input },
-      ]);
-
-      socketRef.current.emit("sendMessage", {
-        senderId: JSON.parse(localStorage.getItem("user"))._id,
-        receiverId: selectedFriend._id,
-        message: input,
-      });
-
       const token = localStorage.getItem("token");
       await axiosInstance.post(
         `/conversations/sendmessage/${selectedFriend._id}`,
         { message: input },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        }
+        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
       );
       setInput("");
     } catch (error) {
@@ -183,7 +142,12 @@ useEffect(() => {
             sendMessage={sendMessage}
           />
         )}
-        <Rightside friends={friends} />
+        <Rightside
+          friends={friends}
+          selectedFriend={selectedFriend}
+          sendMessage={sendMessage}
+          onlineUsers={onlineUsers}
+        />
       </div>
     </div>
   );

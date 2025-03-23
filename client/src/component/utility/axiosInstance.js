@@ -2,10 +2,10 @@ import axios from "axios";
 
 const axiosInstance = axios.create({
   baseURL: "http://localhost:8000/api/v1",
-  withCredentials: true, // ✅ Ensure cookies are sent
+  withCredentials: true, // Ensure cookies are sent
 });
 
-// ✅ REQUEST INTERCEPTOR: Har request ke sath access token bhejna
+// REQUEST INTERCEPTOR: Har request ke sath access token bhejna
 axiosInstance.interceptors.request.use((req) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -14,7 +14,7 @@ axiosInstance.interceptors.request.use((req) => {
   return req;
 });
 
-// ✅ RESPONSE INTERCEPTOR: Expired token ko refresh karna
+// RESPONSE INTERCEPTOR: Expired token ko refresh karna
 axiosInstance.interceptors.response.use(
   (response) => response, // Agar response thik hai to return kar do
   async (error) => {
@@ -36,21 +36,14 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-// ✅ TOKEN REFRESH FUNCTION
+// TOKEN REFRESH FUNCTION
 export const handleTokenRefresh = async () => {
   try {
-    const refreshToken = localStorage.getItem("refreshToken");
-    if (!refreshToken) {
-      console.log("⚠️ No refresh token found, logging out...");
-      handleLogout();
-      return null;
-    }
-
-    console.log("🔄 Attempting token refresh with:", refreshToken);
+    console.log("🔄 Attempting token refresh...");
 
     const res = await axios.post(
       "http://localhost:8000/api/v1/users/refreshtoken",
-      { token: refreshToken },
+      {},
       { withCredentials: true }
     );
 
@@ -60,7 +53,7 @@ export const handleTokenRefresh = async () => {
     if (newToken) {
       console.log("✅ Token refreshed successfully:", newToken);
 
-      // Update tokens in localStorage
+      // ✅ Update accessToken in localStorage
       localStorage.setItem("token", newToken);
 
       return newToken;
@@ -76,9 +69,21 @@ export const handleTokenRefresh = async () => {
   }
 };
 
-// ✅ LOGOUT FUNCTION
-export const handleLogout = () => {
-   console.log("🔴 handleLogout CALLED! Deleting Token...");
+
+// LOGOUT FUNCTION
+export const handleLogout = async () => {
+  console.log("🔴 handleLogout CALLED! Deleting Token...");
+
+ try {
+   await axios.post(
+     "http://localhost:8000/api/v1/users/logout",
+     {}, 
+     { withCredentials: true } 
+   );
+ } catch (error) {
+   console.error("Logout API failed:", error);
+ }
+
   localStorage.removeItem("token");
   localStorage.removeItem("refreshToken");
   localStorage.removeItem("user");

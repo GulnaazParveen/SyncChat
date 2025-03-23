@@ -1,14 +1,28 @@
 import { getIoInstance } from "../socket/index.js";
 const onlineUsers = new Map();
 
-export const handleSocketEvents = (socket) => {
-  // console.log(`✅ Handling events for: ${socket.id}`);
-
+export const handleSocketEvents = (socket, io) => {
   // **User Connection Event**
   socket.on("userConnected", (userId) => {
     onlineUsers.set(userId, socket.id);
-    // console.log(`✅ User ${userId} is online (Socket ID: ${socket.id})`);
-    updateOnlineUsers();
+    console.log(`✅ User ${userId} connected (Socket ID: ${socket.id})`);
+    updateOnlineUsers(io);
+  });
+
+  // **User Disconnection Event**
+  socket.on("disconnect", () => {
+    let disconnectedUserId = null;
+
+    for (let [userId, socketId] of onlineUsers.entries()) {
+      if (socketId === socket.id) {
+        disconnectedUserId = userId;
+        onlineUsers.delete(userId);
+        break;
+      }
+    }
+
+    console.log(`❌ User disconnected: ${disconnectedUserId}`);
+    updateOnlineUsers(io);
   });
 
   // **Message Handling**
@@ -16,7 +30,7 @@ export const handleSocketEvents = (socket) => {
     const receiverSocketId = onlineUsers.get(receiverId);
 
     if (receiverSocketId) {
-      getIoInstance().to(receiverSocketId).emit("receiveMessage", {
+      io.to(receiverSocketId).emit("receiveMessage", {
         senderId,
         message,
       });
@@ -26,28 +40,8 @@ export const handleSocketEvents = (socket) => {
     }
   });
 
-  // **User Disconnection**
- socket.on("disconnect", () => {
-   let disconnectedUserId = null;
-
-   for (let [userId, socketId] of onlineUsers.entries()) {
-     if (socketId === socket.id) {
-       disconnectedUserId = userId; // Store userId before deleting
-       onlineUsers.delete(userId);
-       break;
-     }
-   }
-
-   console.log(
-     `🔴 User disconnected: ${disconnectedUserId || "Unknown"} (Socket ID: ${
-       socket.id
-     })`
-   );
-   updateOnlineUsers();
- });
-
-  // **Update Online Users List**
-  const updateOnlineUsers = () => {
-    getIoInstance().emit("updateOnlineUsers", Array.from(onlineUsers.keys()));
+  // **Update Online Users**
+  const updateOnlineUsers = (io) => {
+    io.emit("updateOnlineUsers", Array.from(onlineUsers.keys()));
   };
 };

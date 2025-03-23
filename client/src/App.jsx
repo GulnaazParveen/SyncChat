@@ -22,25 +22,31 @@ const App = () => {
   useEffect(() => {
     const initializeUser = async () => {
       let token = localStorage.getItem("token");
-      let storedUser = localStorage.getItem("user");
 
-      console.log("🔍 Checking token:", token); // 👀 Debug
+      console.log("🔍 Checking token:", token);
 
-      if (token) {
-        console.log("🔄 Fetching user data...");
-        await fetchUserData(token);
-      } else {
-        console.log("❌ No token found, showing login page.");
-        setLoading(false); // If no token, stop loading and show login
+      if (!token) {
+        console.log("❌ No token found, attempting refresh...");
+        token = await handleTokenRefresh();
+        if (token) {
+          console.log("✅ Token refreshed successfully:", token);
+          localStorage.setItem("token", token);
+        } else {
+          console.log("🔴 Refresh token failed. Redirecting to login.");
+          setLoading(false);
+          return;
+        }
       }
+
+      console.log("🔄 Fetching user data...");
+      await fetchUserData(token);
     };
 
     initializeUser();
   }, []);
 
-
   const fetchUserData = async (token) => {
-    console.log("🚀 fetchUserData called with token:", token); // 👀 Debug
+    console.log("🚀 fetchUserData called with token:", token);
     if (!token) {
       setLoading(false);
       return;
@@ -52,15 +58,15 @@ const App = () => {
       });
       console.log("✅ API Response:", res.data);
 
-      console.log("✅ User fetched:", res.data.data.user);
+      setUser({ ...res.data.data.user, token }); 
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ ...res.data.data.user, token })
+      );
 
-      setUser(res.data.data.user); // ✅ User state update karo
-      localStorage.setItem("user", JSON.stringify(res.data.data.user));
-
-      await connectSocket(); // ✅ Socket tabhi connect ho jab user logged in ho
+      await connectSocket(token); 
     } catch (error) {
       console.log("🔴 Token invalid. Trying refresh...");
-
       const newToken = await handleTokenRefresh();
       if (newToken) {
         localStorage.setItem("token", newToken);
@@ -73,7 +79,6 @@ const App = () => {
       setLoading(false);
     }
   };
-
 
   if (loading)
     return (
