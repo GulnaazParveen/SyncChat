@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:8000/api/v1",
+  baseURL: `${import.meta.env.VITE_BACKEND_URL}/api/v1`, // Backend URL
   withCredentials: true, // Ensure cookies are sent
 });
 
@@ -10,6 +10,13 @@ axiosInstance.interceptors.request.use((req) => {
   const token = localStorage.getItem("token");
   if (token) {
     req.headers.Authorization = `Bearer ${token}`;
+  } else {
+    console.log("🔴 No token found. Attempting refresh...");
+    handleTokenRefresh().then((newToken) => {
+      if (newToken) {
+        req.headers.Authorization = `Bearer ${newToken}`;
+      }
+    });
   }
   return req;
 });
@@ -42,7 +49,7 @@ export const handleTokenRefresh = async () => {
     console.log("🔄 Attempting token refresh...");
 
     const res = await axios.post(
-      "http://localhost:8000/api/v1/users/refreshtoken",
+      `${import.meta.env.VITE_BACKEND_URL}/api/v1/users/refreshtoken`,
       {},
       { withCredentials: true }
     );
@@ -59,12 +66,14 @@ export const handleTokenRefresh = async () => {
       return newToken;
     } else {
       console.error("⚠️ No accessToken in response, logging out...");
-      handleLogout();
       return null;
     }
   } catch (error) {
-    console.error("❌ Token refresh failed:", error.response?.data || error);
-    handleLogout();
+    console.error("Token refresh failed:", error.response?.data || error);
+   if (error.response?.status === 401 || error.response?.status === 403) {
+     console.log("🔴 Refresh token invalid or expired. Logging out...");
+   
+   }
     return null;
   }
 };
@@ -76,9 +85,9 @@ export const handleLogout = async () => {
 
  try {
    await axios.post(
-     "http://localhost:8000/api/v1/users/logout",
-     {}, 
-     { withCredentials: true } 
+     `${import.meta.env.VITE_BACKEND_URL}/api/v1/users/logout`,
+     {},
+     { withCredentials: true }
    );
  } catch (error) {
    console.error("Logout API failed:", error);

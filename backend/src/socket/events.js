@@ -1,11 +1,11 @@
-import { getIoInstance } from "../socket/index.js";
+import { getIoInstance } from "./index.js";
 const onlineUsers = new Map();
 
 export const handleSocketEvents = (socket, io) => {
   // **User Connection Event**
   socket.on("userConnected", (userId) => {
     onlineUsers.set(userId, socket.id);
-    console.log(`✅ User ${userId} connected (Socket ID: ${socket.id})`);
+    console.log(`User ${userId} connected (Socket ID: ${socket.id})`);
     updateOnlineUsers(io);
   });
 
@@ -21,7 +21,7 @@ export const handleSocketEvents = (socket, io) => {
       }
     }
 
-    console.log(`❌ User disconnected: ${disconnectedUserId}`);
+    console.log(` User disconnected: ${disconnectedUserId}`);
     updateOnlineUsers(io);
   });
 
@@ -34,9 +34,9 @@ export const handleSocketEvents = (socket, io) => {
         senderId,
         message,
       });
-      console.log(`📩 Message sent from ${senderId} to ${receiverId}`);
+      console.log(`Message sent from ${senderId} to ${receiverId}`);
     } else {
-      console.log(`⚠️ Receiver ${receiverId} is offline.`);
+      console.log(`Receiver ${receiverId} is offline.`);
     }
   });
 

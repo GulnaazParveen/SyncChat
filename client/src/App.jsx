@@ -23,7 +23,16 @@ const App = () => {
     const initializeUser = async () => {
       let token = localStorage.getItem("token");
 
-      console.log("🔍 Checking token:", token);
+    let refreshToken = localStorage.getItem("refreshToken");
+
+    console.log("🔍 Checking token:", token);
+
+    // 🛑 **Agar dono token null hain, to direct login page show kare**
+    if (!token && !refreshToken) {
+      console.log("🔴 No tokens found. Redirecting to login.");
+      setLoading(false);
+      return; // 🔥 Refresh token API call nahi karega
+    }
 
       if (!token) {
         console.log("❌ No token found, attempting refresh...");
@@ -45,40 +54,41 @@ const App = () => {
     initializeUser();
   }, []);
 
-  const fetchUserData = async (token) => {
-    console.log("🚀 fetchUserData called with token:", token);
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+ const fetchUserData = async (token) => {
+   console.log("🚀 fetchUserData called with token:", token);
+   if (!token) {
+     setLoading(false);
+     return;
+   }
 
-    try {
-      const res = await axiosInstance.get("/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      console.log("✅ API Response:", res.data);
+   try {
+     const res = await axiosInstance.get("/users/me", {
+       headers: { Authorization: `Bearer ${token}` },
+     });
 
-      setUser({ ...res.data.data.user, token }); 
-      localStorage.setItem(
-        "user",
-        JSON.stringify({ ...res.data.data.user, token })
-      );
+     console.log("✅ API Response:", res.data);
+     setUser({ ...res.data.data.user, token });
+     localStorage.setItem(
+       "user",
+       JSON.stringify({ ...res.data.data.user, token })
+     );
 
-      await connectSocket(token); 
-    } catch (error) {
-      console.log("🔴 Token invalid. Trying refresh...");
-      const newToken = await handleTokenRefresh();
-      if (newToken) {
-        localStorage.setItem("token", newToken);
-        return fetchUserData(newToken); // ✅ New token ke saath dobara fetchUserData call karo
-      } else {
-        console.log("🔴 Refresh token failed. Logging out...");
-        handleLogout();
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+     await connectSocket(token);
+   } catch (error) {
+     console.log("🔴 Token invalid. Trying refresh...");
+     const newToken = await handleTokenRefresh();
+
+     if (newToken) {
+       localStorage.setItem("token", newToken);
+       return fetchUserData(newToken); // ✅ New token ke saath dobara fetchUserData call karo
+     } else {
+       console.log("🔴 Refresh token failed. Logging out...");
+       handleLogout(); 
+     }
+   } finally {
+     setLoading(false);
+   }
+ };
 
   if (loading)
     return (

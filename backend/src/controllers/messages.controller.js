@@ -3,7 +3,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import conversation from "../models/conversation.js";
 import message from "../models/message.model.js";
-import { getIoInstance } from "../../../socket/index.js";
+import { getIoInstance } from "../socket/index.js";
+
 const sendMessage = asyncHandler(async (req, res) => {
   const { message: messageText } = req.body;
   const { id: receiverId } = req.params;
@@ -52,7 +53,6 @@ const sendMessage = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, newMessage, "Message sent successfully"));
 });
 
-
 // get messages between two users
 const getMessage = asyncHandler(async (req, res) => {
   const { id: userToChatId } = req.params;
@@ -79,5 +79,4 @@ const getMessage = asyncHandler(async (req, res) => {
     );
 });
 
-
-export { sendMessage,getMessage};
+export { sendMessage, getMessage };

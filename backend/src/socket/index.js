@@ -10,7 +10,7 @@ let io;
 export const createSocketServer = (server) => {
   io = new Server(server, {
     cors: {
-      origin: ["http://localhost:5173"], // Frontend URL
+       origin: process.env.CORS_ORIGIN, // Frontend URL
       methods: ["GET", "POST"],
       credentials: true,
     },
@@ -19,13 +19,13 @@ export const createSocketServer = (server) => {
 
   // **Middleware for Authentication**
   io.use((socket, next) => {
-    console.log("🔍 Authenticating Socket Connection...");
+    console.log("Authenticating Socket Connection...");
 
     const token = socket.handshake.auth?.token;
-    console.log("🔍 Token received in handshake:", token);
+    console.log("Token received in handshake:", token);
 
     if (!token) {
-      console.log("❌ No token found in handshake.auth!");
+      console.log(" No token found in handshake.auth!");
       return next(new Error("Unauthorized"));
     }
 
@@ -39,10 +39,10 @@ export const createSocketServer = (server) => {
       socket.user = decoded; // Attach user data to socket
       next();
     } catch (err) {
-      console.log("🔴 Token verification failed:", err.message);
+      console.log("Token verification failed:", err.message);
 
       if (err.name === "TokenExpiredError") {
-        console.log("🔄 Token expired, prompting client to refresh...");
+        console.log("Token expired, prompting client to refresh...");
         socket.emit("tokenExpired");
       }
 
@@ -52,7 +52,7 @@ export const createSocketServer = (server) => {
 
   // **Socket Connection Handler**
   io.on("connection", (socket) => {
-    console.log("✅ Socket connected:", socket.user);
+    console.log("Socket connected:", socket.user);
     handleSocketEvents(socket, io);
   });
 };

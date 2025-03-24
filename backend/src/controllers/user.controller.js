@@ -127,11 +127,21 @@ const logoutUser = asyncHandler(async (req, res) => {
     { new: true }
   );
 
-  return res
-    .status(200)
-    .clearCookie("accessToken")
-    .clearCookie("refreshToken")
-    .json(new ApiResponse(200, {}, "User logged out"));
+  // Clear cookies separately
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Strict",
+    path: "/",
+  });
+
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Strict",
+    path: "/",
+  });
+  return res.status(200).json(new ApiResponse(200, {}, "User logged out"));
 });
 
 // Refresh access token
