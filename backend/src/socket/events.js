@@ -1,6 +1,5 @@
 import { getIoInstance } from "./index.js";
 const onlineUsers = new Map();
-
 export const handleSocketEvents = (socket, io) => {
   // **User Connection Event**
   socket.on("userConnected", (userId) => {

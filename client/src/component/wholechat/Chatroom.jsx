@@ -64,6 +64,7 @@ const Chatroom = ({ user }) => {
     if (!selectedFriend) return;
     try {
       const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
       const res = await axiosInstance.get(
         `/conversations/getmessage/${selectedFriend._id}`,
         {

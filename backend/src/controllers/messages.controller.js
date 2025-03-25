@@ -65,7 +65,7 @@ const getMessage = asyncHandler(async (req, res) => {
     .populate({ path: "conversationMessage", model: "Message" }); // Populate messages
 
   if (!getConversation) {
-    throw new ApiError(401, "No conversation found");
+    return res.status(200).json(new ApiResponse(200, [], "No messages yet"));
   }
 
   return res

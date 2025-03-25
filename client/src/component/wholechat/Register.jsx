@@ -36,9 +36,18 @@ const Register = ({ setUser }) => {
       alert("Registration successful! Please login.");
       navigate("/auth/login");
     } catch (error) {
-      if (error.response?.data?.message === "Email already exists") {
+      const statusCode = error.response?.status;
+      const errorMessage = error.response?.data?.message;
+
+      if (statusCode === 400) {
+        alert(errorMessage || "Invalid input. Please check your details.");
+      } else if (statusCode === 409) {
         alert("Email already registered! Redirecting to login...");
         navigate("/auth/login");
+      } else if (statusCode === 415) {
+        alert("Invalid avatar file. Please upload a valid image.");
+      } else if (statusCode === 413) {
+        alert("Avatar file is too large. Please upload a smaller image.");
       } else {
         alert("Registration failed. Please try again.");
       }
