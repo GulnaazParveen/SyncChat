@@ -66,7 +66,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   return res
     .status(201)
-    .json(new ApiResponse(200, createdUser, "User registered Successfully"));
+    .json(new ApiResponse(200,    { user: createdUser} , "User registered Successfully"));
 });
 
 // Login user
@@ -98,8 +98,8 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: true,
-    sameSite: "Strict",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
   };
 
   return res
@@ -160,7 +160,8 @@ const refreshAccessToken = asyncHandler(async (req, res, next) => {
   try {
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
     const user = await User.findById(decoded._id);
-
+    console.log("Stored Refresh Token: ", user?.refreshToken);
+    console.log("Incoming Refresh Token: ", refreshToken);
     if (!user || refreshToken !== user.refreshToken) {
       return next(
         new ApiError(401, "Invalid refresh token, please log in again.")
@@ -174,12 +175,12 @@ const refreshAccessToken = asyncHandler(async (req, res, next) => {
       .status(200)
       .cookie("accessToken", accessToken, {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "Strict",
       })
       .cookie("refreshToken", newRefreshToken, {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "Lax",
       })
       .json(

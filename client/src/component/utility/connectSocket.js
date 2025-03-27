@@ -16,9 +16,20 @@ export const connectSocket = (token) => {
       socket.emit("userConnected", token); // Emit userConnected event with token
     });
 
-    socket.on("tokenExpired", () => {
+    socket.on("tokenExpired", async() => {
       console.log("Token expired, please refresh the token.");
       // Handle token expiration (e.g., refresh token or logout)
+       const newToken = await handleTokenRefresh();
+  
+  if (newToken) {
+    console.log("✅ New token obtained, reconnecting socket...");
+    socket.auth.token = newToken;
+    socket.disconnect(); // Ensure old connection is closed
+    socket.connect(); // Establish new connection with fresh token
+  } else {
+    console.log("Failed to refresh token. Logging out...");
+    handleLogout();
+  }
     });
 
     socket.on("disconnect", () => {

@@ -70,28 +70,26 @@ export const handleTokenRefresh = async () => {
     }
   } catch (error) {
     console.error("Token refresh failed:", error.response?.data || error);
-   if (error.response?.status === 401 || error.response?.status === 403) {
-     console.log("🔴 Refresh token invalid or expired. Logging out...");
-   
-   }
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      console.log("🔴 Refresh token invalid or expired. Logging out...");
+    }
     return null;
   }
 };
-
 
 // LOGOUT FUNCTION
 export const handleLogout = async () => {
   console.log("🔴 handleLogout CALLED! Deleting Token...");
 
- try {
-   await axios.post(
-     `${import.meta.env.VITE_BACKEND_URL}/api/v1/users/logout`,
-     {},
-     { withCredentials: true }
-   );
- } catch (error) {
-   console.error("Logout API failed:", error);
- }
+  try {
+    await axios.post(
+      `${import.meta.env.VITE_BACKEND_URL}/api/v1/users/logout`,
+      {},
+      { withCredentials: true }
+    );
+  } catch (error) {
+    console.error("Logout API failed:", error);
+  }
 
   localStorage.removeItem("token");
   localStorage.removeItem("refreshToken");

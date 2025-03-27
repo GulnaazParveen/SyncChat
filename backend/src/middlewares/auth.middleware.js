@@ -4,11 +4,12 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {
+ 
   try {
     const token =
       req.cookies?.accessToken ||
       req.header("Authorization")?.replace("Bearer ", "");
-
+    console.log("🔍 Incoming Token:", token); // ✅ Debugging
     if (!token) {
       throw new ApiError(401, "Unauthorized request");
     }
@@ -25,6 +26,8 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
+    console.log("🔴 Token Error:", error.message);
+    console.log("🔴 Token Error Name:", error.name);
     if (error.name === "TokenExpiredError") {
       throw new ApiError(401, "Access token expired, please refresh.");
     }

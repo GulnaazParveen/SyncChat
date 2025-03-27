@@ -13,21 +13,27 @@ const Login = ({ setUser }) => {
         withCredentials: true,
       });
 
-      const { accessToken, user } = res.data.data;
-
+      const { accessToken, user ,refreshToken} = res.data.data;
+      console.log("🔵 Login response:", res.data.data);
       localStorage.setItem("token", accessToken);
       localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("refreshToken", refreshToken);
 
       setUser(user);
       navigate("/chatroom");
     } catch (error) {
       const status = error.response?.status;
-
       if (status === 404) {
-        alert("User not found! Redirecting to Register...");
-        navigate("/auth/register");
+         console.log("🟡 User not found! Navigating to Register...");
+         alert("User not found! Redirecting to Register...");
+
+         setTimeout(() => {
+           console.log("➡ Navigating to /auth/register now...");
+           navigate("/auth/register", { replace: true });
+         }, 500);
       } else if (status === 401 || status === 400) {
         alert("Invalid email or password.");
+          navigate("/auth/register", { replace: true });
       } else {
         alert("Something went wrong. Please try again later.");
       }

@@ -22,73 +22,57 @@ const App = () => {
   useEffect(() => {
     const initializeUser = async () => {
       let token = localStorage.getItem("token");
+      let refreshToken = localStorage.getItem("refreshToken");
 
-    let refreshToken = localStorage.getItem("refreshToken");
-
-    console.log("🔍 Checking token:", token);
-
-    // 🛑 **Agar dono token null hain, to direct login page show kare**
-    if (!token && !refreshToken) {
-      console.log("🔴 No tokens found. Redirecting to login.");
-      setLoading(false);
-      return; // 🔥 Refresh token API call nahi karega
-    }
+      if (!token && !refreshToken) {
+        console.log("🔴 No tokens found. Redirecting to register.");
+        setLoading(false);
+        return;
+      }
 
       if (!token) {
-        console.log("❌ No token found, attempting refresh...");
         token = await handleTokenRefresh();
         if (token) {
-          console.log("✅ Token refreshed successfully:", token);
           localStorage.setItem("token", token);
         } else {
-          console.log("🔴 Refresh token failed. Redirecting to login.");
+          console.log("🔴 Refresh token expired. Logging out.");
+          handleLogout();
           setLoading(false);
           return;
         }
       }
 
-      console.log("🔄 Fetching user data...");
       await fetchUserData(token);
     };
 
     initializeUser();
   }, []);
 
- const fetchUserData = async (token) => {
-   console.log("🚀 fetchUserData called with token:", token);
-   if (!token) {
-     setLoading(false);
-     return;
-   }
-
-   try {
+  const fetchUserData = async (token) => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    try {
      const res = await axiosInstance.get("/users/me", {
-       headers: { Authorization: `Bearer ${token}` },
+       withCredentials: true,
+       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
      });
 
-     console.log("✅ API Response:", res.data);
-     setUser({ ...res.data.data.user, token });
-     localStorage.setItem(
-       "user",
-       JSON.stringify({ ...res.data.data.user, token })
-     );
 
-     await connectSocket(token);
-   } catch (error) {
-     console.log("🔴 Token invalid. Trying refresh...");
-     const newToken = await handleTokenRefresh();
-
-     if (newToken) {
-       localStorage.setItem("token", newToken);
-       return fetchUserData(newToken); // ✅ New token ke saath dobara fetchUserData call karo
-     } else {
-       console.log("🔴 Refresh token failed. Logging out...");
-       handleLogout(); 
-     }
-   } finally {
-     setLoading(false);
-   }
- };
+      setUser({ ...res.data.data.user, token });
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ ...res.data.data.user, token })
+      );
+      await connectSocket(token);
+    } catch (error) {
+      console.log("🔴 Token invalid. Logging out.");
+      handleLogout();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading)
     return (
@@ -105,9 +89,12 @@ const App = () => {
 const AppRoutes = ({ user, setUser }) => {
   const location = useLocation();
 
-  // Prevent infinite looping
-  if (!user && !["/auth/login", "/auth/register"].includes(location.pathname)) {
-    return <Navigate to="/auth/login" replace />;
+  if (
+    !user &&
+    location.pathname !== "/auth/register" &&
+    location.pathname !== "/auth/login"
+  ) {
+    return <Navigate to="/auth/register" replace />;
   }
 
   return (
@@ -122,7 +109,9 @@ const AppRoutes = ({ user, setUser }) => {
       />
       <Route
         path="/"
-        element={<Navigate to={user ? "/chatroom" : "/auth/login"} replace />}
+        element={
+          <Navigate to={user ? "/chatroom" : "/auth/register"} replace />
+        }
       />
     </Routes>
   );
